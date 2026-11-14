@@ -249,8 +249,12 @@ function noteActs(notes) {
 function actsFor(show) {
   return [...new Set([...headliners(show.artist), ...noteActs(show.notes)])];
 }
+const FAVORED = ["Georgia", "Atlanta Braves", "USA"];
 function showArt(show) {
   const heads = headliners(show.artist);
+  if (show.category === "sports") {
+    for (const name of FAVORED) if (heads.includes(name) && ART[name]) return ART[name];
+  }
   for (const name of heads) if (ART[name]) return ART[name];
   if (!heads.length) {
     for (const name of noteActs(show.notes)) if (ART[name]) return ART[name];
