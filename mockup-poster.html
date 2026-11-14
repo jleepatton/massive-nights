@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Massive Nights — posters</title>
+<style>
+  :root { color-scheme: dark; --wall: #161616; --ink: #f4efe4; --red: #e23b2f; --yellow: #f0c93a; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--wall); color: var(--ink); font-family: "Arial Narrow", "Franklin Gothic Medium", Impact, sans-serif; }
+  .page { width: min(1100px, calc(100% - 36px)); margin: 0 auto; padding: 36px 0 80px; }
+  h1 { font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif; font-weight: 400; font-size: 4.2rem; letter-spacing: 0.02em; line-height: 0.85; margin: 0; text-transform: uppercase; }
+  .lede { margin: 10px 0 0; font-family: Palatino, Georgia, serif; font-style: italic; font-size: 1.15rem; color: var(--yellow); }
+  nav { display: flex; gap: 1.5rem; margin-top: 22px; }
+  nav button { font: inherit; font-size: 1.15rem; letter-spacing: 0.14em; text-transform: uppercase; background: none; border: 0; color: #9a9386; cursor: pointer; padding: 0 0 4px; border-bottom: 3px solid transparent; }
+  nav button[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+  .filters { display: flex; gap: 1.2rem; margin: 22px 0; }
+  .filters button { font: inherit; letter-spacing: 0.12em; text-transform: uppercase; background: none; border: 0; color: #9a9386; cursor: pointer; padding: 0; }
+  .filters button[aria-pressed="true"] { color: var(--yellow); }
+  .wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
+  .poster { background: #111; color: #f6f1e6; min-height: 420px; padding: 14px 14px 16px; display: flex; flex-direction: column; justify-content: flex-end; position: relative; overflow: hidden; border: 8px solid #111; }
+  .poster.yellow { background: var(--yellow); color: #141414; border-color: #141414; }
+  .poster.red { background: var(--red); color: #fff8ee; border-color: #1a1a1a; }
+  .poster img { position: absolute; inset: 0 0 46% 0; width: 100%; height: 54%; object-fit: cover; }
+  .poster.typeonly img { display: none; }
+  .poster .stack { position: relative; text-align: center; text-transform: uppercase; }
+  .poster h2 { font-family: Impact, Haettenschweiler, sans-serif; font-weight: 400; font-size: 2.35rem; line-height: 0.86; margin: 0; letter-spacing: 0.01em; }
+  .stars { margin: 8px 0; letter-spacing: 0.4em; font-size: 0.8rem; }
+  .support, .venue { margin: 0; letter-spacing: 0.08em; }
+  .support { font-size: 0.95rem; }
+  .venue { font-size: 1.05rem; margin-top: 4px; }
+  .when { display: flex; justify-content: center; gap: 10px; align-items: baseline; margin: 10px 0 0; font-family: Impact, sans-serif; }
+  .when b { font-size: 2.4rem; font-weight: 400; line-height: 0.8; color: var(--red); }
+  .poster.red .when b { color: var(--yellow); }
+  .poster.yellow .when b { color: var(--red); }
+  .board { display: grid; gap: 0; }
+  .board button { font: inherit; text-align: left; background: none; border: 0; border-bottom: 1px solid #3a3a3a; color: var(--ink); cursor: pointer; padding: 14px 0; display: flex; justify-content: space-between; letter-spacing: 0.08em; text-transform: uppercase; font-size: 1.6rem; }
+  .board button span { color: var(--yellow); }
+  .back { font: inherit; letter-spacing: 0.12em; text-transform: uppercase; background: none; border: 0; color: var(--yellow); cursor: pointer; padding: 0 0 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Massive<br>Nights</h1>
+  <p class="lede">Our Psalms Are Sing-Along Songs</p>
+  <nav>
+    <button type="button" id="tab-shows" aria-current="page">Shows</button>
+    <button type="button" id="tab-artists">Artists</button>
+    <button type="button" id="tab-venues">Venues</button>
+  </nav>
+  <div class="filters" id="filters">
+    <button type="button" data-type="all" aria-pressed="true">All</button>
+    <button type="button" data-type="concert">Concerts</button>
+    <button type="button" data-type="comedy">Comedy</button>
+    <button type="button" data-type="sports">Sports</button>
+  </div>
+  <div class="wall" id="wall"></div>
+  <div class="board" id="board" hidden></div>
+</div>
+<script>
+const SHOWS = [
+  { artist: "Band of Horses", support: "An evening with", venue: "The Van Buren", city: "Phoenix", date: "2026-11-16", mon: "Nov", day: "16", year: "2026", type: "concert", img: "images/band-of-horses.jpg", ink: "" },
+  { artist: "Jack White", support: "Phone-free show", venue: "Arizona Financial Theatre", city: "Phoenix", date: "2026-10-03", mon: "Oct", day: "3", year: "2026", type: "concert", img: "images/jack-white.jpg", ink: "yellow" },
+  { artist: "Nate Bargatze", support: "Big Dumb Eyes", venue: "PHX Arena", city: "Phoenix", date: "2026-06-27", mon: "Jun", day: "27", year: "2026", type: "comedy", img: "images/nate-bargatze.jpg", ink: "red" },
+  { artist: "Georgia v TCU", support: "National championship", venue: "SoFi Stadium", city: "Inglewood", date: "2023-01-09", mon: "Jan", day: "9", year: "2023", type: "sports", img: "images/georgia.png", ink: "" },
+  { artist: "The National", support: "Owen Pallett", venue: "Fox Theatre", city: "Atlanta", date: "2010-10-05", mon: "Oct", day: "5", year: "2010", type: "concert", img: "images/the-national.jpg", ink: "yellow" },
+  { artist: "Kenny Chesney", support: "Uncle Kracker", venue: "40 Watt Club", city: "Athens", date: "2004-01-24", mon: "Jan", day: "24", year: "2004", type: "concert", img: "", ink: "red" }
+];
+const PEOPLE = [["Band of Horses", 6, "images/band-of-horses.jpg"], ["Jack White", 2, "images/jack-white.jpg"], ["Nate Bargatze", 1, "images/nate-bargatze.jpg"], ["The National", 3, "images/the-national.jpg"], ["Kenny Chesney", 1, ""], ["Uncle Kracker", 1, ""]];
+let mode = "shows";
+let type = "all";
+let venue = "";
+
+function poster(item, sub) {
+  const img = item.img && mode === "shows" ? `<img src="${item.img}" alt="">` : "";
+  const cls = `poster ${item.ink || ""} ${item.img && mode === "shows" ? "" : "typeonly"}`;
+  return `<article class="${cls}">${img}<div class="stack">
+    <h2>${item.artist}</h2>
+    <p class="stars">★ ★ ★</p>
+    <p class="support">${sub}</p>
+    <p class="venue">${item.venue || ""}</p>
+    <p class="when"><span>${item.mon || ""}</span><b>${item.day || item.count}</b><span>${item.year || "nights"}</span></p>
+  </div></article>`;
+}
+function render() {
+  const wall = document.getElementById("wall");
+  const board = document.getElementById("board");
+  document.getElementById("filters").hidden = mode !== "shows";
+  if (mode === "venues" && !venue) {
+    wall.hidden = true;
+    board.hidden = false;
+    const counts = {};
+    SHOWS.forEach(s => { counts[s.venue] = (counts[s.venue] || 0) + 1; });
+    board.innerHTML = Object.entries(counts).map(([name, n]) => `<button type="button" data-venue="${name}">${name}<span>${n}</span></button>`).join("");
+    return;
+  }
+  board.hidden = true;
+  wall.hidden = false;
+  let items = [];
+  if (mode === "shows") {
+    items = SHOWS.filter(s => type === "all" || s.type === type).filter(s => !venue || s.venue === venue);
+  } else if (mode === "artists") {
+    items = PEOPLE.map(([artist, count, img]) => ({ artist, count, img, ink: "yellow", support: "nights on the list", venue: "", mon: "", day: String(count), year: "nights" }));
+  } else {
+    items = SHOWS.filter(s => s.venue === venue);
+  }
+  const back = venue && mode === "venues" ? `<button class="back" type="button" id="back">All venues</button>` : "";
+  wall.innerHTML = back + items.map(s => poster(s, s.support || "")).join("");
+  const b = document.getElementById("back");
+  if (b) b.addEventListener("click", () => { venue = ""; render(); });
+}
+document.getElementById("board").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-venue]");
+  if (!btn) return;
+  venue = btn.dataset.venue;
+  render();
+});
+document.querySelectorAll(".filters button").forEach(btn => btn.addEventListener("click", () => {
+  type = btn.dataset.type;
+  document.querySelectorAll(".filters button").forEach(el => el.setAttribute("aria-pressed", el === btn ? "true" : "false"));
+  render();
+}));
+function tab(name) {
+  mode = name;
+  if (name !== "venues") venue = "";
+  ["shows", "artists", "venues"].forEach(id => {
+    const el = document.getElementById("tab-" + id);
+    if (id === name) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  });
+  render();
+}
+document.getElementById("tab-shows").addEventListener("click", () => tab("shows"));
+document.getElementById("tab-artists").addEventListener("click", () => tab("artists"));
+document.getElementById("tab-venues").addEventListener("click", () => tab("venues"));
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Massive Nights</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: #1c1c1c; color: #f4efe6; font-family: Palatino, "Iowan Old Style", Georgia, serif; }
+  .page { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 72px; }
+  h1 { font-family: Impact, Haettenschweiler, "Arial Narrow", sans-serif; font-weight: 400; font-size: 3.4rem; letter-spacing: 0.03em; text-transform: uppercase; margin: 0; line-height: 0.9; }
+  .lede { margin: 8px 0 0; font-style: italic; color: #f0c93a; }
+  nav.views { display: flex; gap: 1.4rem; margin-top: 20px; }
+  nav.views button { font: inherit; font-size: 1.05rem; background: none; border: 0; border-bottom: 2px solid transparent; color: #9a9386; cursor: pointer; padding: 0 0 4px; }
+  nav.views button[aria-current="page"] { color: #f4efe6; border-bottom-color: #e23b2f; }
+  .filters { display: flex; flex-wrap: wrap; gap: 0.7rem 1rem; align-items: center; margin: 18px 0 8px; }
+  .filters button, .back { font: inherit; background: none; border: 0; color: #9a9386; cursor: pointer; padding: 0; }
+  .filters button[aria-pressed="true"], .back { color: #f0c93a; }
+  .filters input, .filters select { font: inherit; color: #f4efe6; background: transparent; border: 0; border-bottom: 1px solid #5c564c; padding: 2px 0; }
+  #types { display: inline-flex; gap: 1.1rem; }
+  .filters input { min-width: min(220px, 100%); }
+  .filters input:focus, .filters select:focus { outline: none; border-bottom-color: #f0c93a; }
+  .filters select { color-scheme: dark; }
+  .count { margin-left: auto; color: #9a9386; font-variant-numeric: tabular-nums; }
+  .ticket { display: grid; grid-template-columns: 118px 18px 1fr; background: #f7f1e6; color: #1a1814; margin: 14px 0; }
+  .stub { background: #1e3f73; color: #fff8ee; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px 6px; }
+  .stub.concert { background: #1e3f73; }
+  .stub.comedy { background: #c47b2b; }
+  .stub.sports { background: #e23b2f; }
+  .stub.other { background: #5c5470; }
+  .stub .mon { font-family: Impact, sans-serif; letter-spacing: 0.14em; font-size: 0.95rem; }
+  .stub .day { font-family: Impact, sans-serif; font-size: 3.1rem; line-height: 0.85; }
+  .stub .year { font-size: 0.85rem; letter-spacing: 0.08em; }
+  .perf { background: repeating-linear-gradient(#1a1814 0 6px, transparent 6px 12px); width: 18px; }
+  .body { padding: 12px 16px 12px 14px; display: flex; align-items: center; gap: 14px; }
+  .copy { flex: 1; min-width: 0; }
+  .admit { font-family: Impact, sans-serif; letter-spacing: 0.18em; font-size: 0.78rem; color: #e23b2f; }
+  .body h2 { font-size: 1.35rem; margin: 2px 0 0; line-height: 1.05; }
+  .venue { margin: 2px 0 0; }
+  .status-line { margin: 2px 0 0; text-transform: lowercase; }
+  .seat { display: flex; gap: 14px; padding-top: 10px; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+  .seat b { display: block; font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 600; }
+  .seat.raw { display: block; }
+  .face { flex: none; display: block; width: auto; height: auto; max-width: 178px; max-height: 127px; }
+  .face.portrait { max-width: 116px; max-height: 156px; }
+  .venue-btn { width: 100%; text-align: left; font: inherit; font-size: 1.35rem; background: #f7f1e6; color: #1a1814; border: 0; margin: 10px 0; padding: 16px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .venue-btn span { font-family: Impact, sans-serif; color: #e23b2f; font-size: 1.4rem; }
+  body.artists-on .page { width: min(1100px, calc(100% - 36px)); }
+  #artist-q, #venue-q { width: 100%; margin-top: 18px; font-family: "Arial Narrow", Impact, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; font-size: 1.05rem; }
+  #artist-count, #venue-count { margin: 12px 0 18px; font-family: "Arial Narrow", Impact, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+  .wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px; }
+  .wall .poster { background: #f0c93a; color: #141414; min-height: 420px; padding: 14px 14px 16px; display: flex; flex-direction: column; justify-content: flex-end; position: relative; overflow: hidden; border: 8px solid #141414; text-decoration: none; font: inherit; text-align: inherit; cursor: pointer; width: auto; }
+  .wall .poster img { position: absolute; inset: 0 0 46% 0; width: 100%; height: 54%; object-fit: cover; object-position: center center; }
+  #roster .poster img { object-fit: contain; object-position: center center; }
+  #roster .poster.concert { background: #1e3f73; color: #fff8ee; }
+  #roster .poster.comedy { background: #c47b2b; color: #fff8ee; }
+  #roster .poster.sports { background: #e23b2f; color: #fff8ee; }
+  #roster .poster.other { background: #5c5470; color: #fff8ee; }
+  #roster .poster.concert .when b,
+  #roster .poster.sports .when b,
+  #roster .poster.other .when b { color: #f0c93a; }
+  #roster .poster.comedy .when b { color: #fff8ee; }
+  .wall .stack { position: relative; text-align: center; text-transform: uppercase; font-family: "Arial Narrow", "Franklin Gothic Medium", Impact, sans-serif; min-width: 0; }
+  .wall h2 { font-family: Impact, Haettenschweiler, sans-serif; font-weight: 400; font-size: 2.15rem; line-height: 0.86; margin: 0; color: inherit; overflow-wrap: break-word; }
+  .wall h2.long { font-size: 1.45rem; }
+  .wall h2.longer { font-size: 1.15rem; }
+  .wall .stars { margin: 8px 0; letter-spacing: 0.4em; font-size: 0.8rem; }
+  .wall .support { margin: 0; letter-spacing: 0.08em; font-size: 0.95rem; }
+  .wall .when { display: flex; justify-content: center; gap: 10px; align-items: baseline; margin: 10px 0 0; font-family: Impact, sans-serif; }
+  .wall .when b { font-size: 2.4rem; font-weight: 400; line-height: 0.8; color: #e23b2f; }
+  details { margin-top: 6px; }
+  summary { cursor: pointer; }
+  .empty { color: #9a9386; }
+  #artist-q { margin-top: 16px; }
+  @media (max-width: 720px) {
+    .face { max-width: 120px; max-height: 86px; }
+    .face.portrait { max-width: 78px; max-height: 104px; }
+    h1 { font-size: 2.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Massive Nights</h1>
+  <p class="lede">Our Psalms Are Sing-Along Songs</p>
+  <nav class="views" aria-label="Sections">
+    <button type="button" id="tab-shows" aria-current="page">Shows</button>
+    <button type="button" id="tab-artists">Artists</button>
+    <button type="button" id="tab-venues">Venues</button>
+  </nav>
+  <div class="filters" id="filters">
+    <input id="q" type="search" placeholder="Find a night" aria-label="Search shows">
+    <span id="types"></span>
+    <label>Date <select id="year" aria-label="Date"></select></label>
+    <label>Status <select id="status" aria-label="Status"></select></label>
+    <button type="button" id="sort">Newest</button>
+    <button type="button" id="missing" aria-pressed="false">Missing seat</button>
+    <div class="count" id="count"></div>
+  </div>
+  <div id="list"></div>
+  <div id="artists" hidden>
+    <input id="artist-q" type="search" placeholder="Find an artist or team" aria-label="Find an artist or team">
+    <p class="count" id="artist-count"></p>
+    <div id="roster" class="wall"></div>
+  </div>
+  <div id="venues" hidden>
+    <input id="venue-q" type="search" placeholder="Find a venue" aria-label="Find a venue">
+    <p class="count" id="venue-count"></p>
+    <div id="venue-wall" class="wall"></div>
+  </div>
+</div>
+<script>
+
+const SHOWS = [{"artist": "An Evening With Band of Horses", "event_date": "2026-11-16", "venue": "The Van Buren", "seat_or_ticket_type": "", "status": "upcoming", "category": "concert", "source": "Calendar", "order_number": "45-25209/ARZ", "notes": "Monday, November 16, 2026, 8:00 PM in Phoenix. Jessamy added it to the shared calendar with that Ticketmaster confirmation number. No matching ticket email in this inbox, so the seat is still unknown. Billed as an evening with the band, with no opener listed."}, {"artist": "Fastball Comedy Festival", "event_date": "2026-10-18", "venue": "Sloan Park", "seat_or_ticket_type": "Two-day pass, Infield Deluxe seats 116-9-16 and 116-9-15", "status": "past", "category": "comedy", "source": "Punchup", "order_number": "311659", "notes": "Saturday, October 18, 2026 at Sloan Park. Same two-day pass, Infield Deluxe seats 116-9-16 and 116-9-15, order 311659. Gates 5:00 PM, show 5:30 PM. Right Field Plaza entrance. Lineup: Dave Chappelle and Andrew Santino. The festival also advertised surprise guests."}, {"artist": "Fastball Comedy Festival", "event_date": "2026-10-17", "venue": "Sloan Park", "seat_or_ticket_type": "Two-day pass, Infield Deluxe seats 116-9-16 and 116-9-15", "status": "past", "category": "comedy", "source": "Punchup", "order_number": "311659", "notes": "Friday, October 17, 2026 at Sloan Park. Same two-day pass, Infield Deluxe seats 116-9-16 and 116-9-15, order 311659. Gates 5:00 PM, show 5:30 PM. Right Field Plaza entrance. Lineup: Bill Burr, Tom Segura, and Rachel Feinstein. The festival also advertised surprise guests."}, {"artist": "Jack White", "event_date": "2026-10-03", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "3-38402/ARZ", "notes": "Saturday, October 3, 2026, 8:00 PM. Phone-free show. Jessamy added it to the shared calendar and forwarded the Ticketmaster and Live Nation notes. No seat in those emails."}, {"artist": "Zach Bryan: With Heaven On Tour", "event_date": "2026-09-05", "venue": "State Farm Stadium", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "N4Q-E4K9762", "notes": "Saturday, September 5, 2026, 7:00 PM in Glendale. With Heaven On Tour. The published bill also lists Fey Fili and Ryan Bingham and the Texas Gentlemen. Jessamy added it to the shared calendar. No matching ticket email in this inbox, so the seat is unknown."}, {"artist": "The Fray: Summer of Light Tour", "event_date": "2026-07-27", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Monday, July 27, 2026. The shared calendar said \"fray concert with linda\" and did not list a time. Dashboard Confessional and Colony House were on the bill. No seat."}, {"artist": "CA7RIEL & Paco Amoroso: Free Spirits World Tour", "event_date": "2026-07-24", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Friday, July 24, 2026, 8:00 PM. The shared calendar named the tour and left the venue blank. The published show that night was at Arizona Financial Theatre. No seat."}, {"artist": "Nate Bargatze: Big Dumb Eyes World Tour", "event_date": "2026-06-27", "venue": "PHX Arena (formerly Footprint Center)", "seat_or_ticket_type": "Sec 104, Row 15, Seats 1-2", "status": "past", "category": "comedy", "source": "Ticketmaster", "order_number": "52-16975/ARZ", "notes": "Two tickets. The calendar lists this as Mortgage Matchup Center."}, {"artist": "The Avett Brothers and Mike Patton", "event_date": "2026-05-12", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Tuesday, May 12, 2026, 7:30 PM. Billed as AVTT/PTTN. The calendar only said \"Avett Brothers.\" No seat."}, {"artist": "Morgan Jay", "event_date": "2026-04-25", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "comedy", "source": "Calendar", "order_number": "50802862", "notes": "Saturday, April 25, 2026, 7:00 PM. That confirmation number was on the shared calendar. No seat in this inbox."}, {"artist": "Evan Honer: It's a Long Road Tour", "event_date": "2026-04-11", "venue": "The Van Buren", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "35-59633/ARZ", "notes": "Saturday, April 11, 2026, 8:00 PM. The shared calendar has that Ticketmaster confirmation. No seat email in this inbox."}, {"artist": "John Mulaney: Mister Whatever", "event_date": "2026-03-05", "venue": "Celebrity Theatre", "seat_or_ticket_type": "", "status": "past", "category": "comedy", "source": "Calendar", "order_number": "432792288", "notes": "Thursday, March 5, 2026, 7:30 PM. Jessamy forwarded the calendar note. The location on it is the Celebrity Theatre parking lot at 440 North 32nd Street. No seat."}, {"artist": "Nick Offerman: Big Woodchuck", "event_date": "2026-02-19", "venue": "Celebrity Theatre", "seat_or_ticket_type": "Section A-4, Row 13, Seats 12 and 11 (aisle)", "status": "past", "category": "comedy", "source": "Etix", "order_number": "438007260", "notes": "Also bought general-admission parking. Show at 7:00 PM."}, {"artist": "Shane Gillis Live", "event_date": "2025-12-05", "venue": "Mortgage Matchup Center (formerly PHX Arena)", "seat_or_ticket_type": "Sec 121, Row 19, Seats 14-15", "status": "past", "category": "comedy", "source": "Ticketmaster", "order_number": "23-18046/ARZ", "notes": "Two tickets."}, {"artist": "Band of Horses & Iron and Wine", "event_date": "2025-09-28", "venue": "Gila River Resorts & Casinos - Wild Horse Pass", "seat_or_ticket_type": "Sec 201, Row H, Seats 1-2", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "6-33255/ARZ", "notes": "Two tickets."}, {"artist": "Jamey Johnson", "event_date": "2025-06-21", "venue": "Gila River Resorts & Casinos - Wild Horse Pass", "seat_or_ticket_type": "Section 201, Row N, Seat 1", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "3-27553/ARZ", "notes": "Accepted a transfer from Matthew. The confirmation shows one seat."}, {"artist": "Tyler Childers: On The Road", "event_date": "2025-06-08", "venue": "Talking Stick Resort Amphitheatre", "seat_or_ticket_type": "Sec 303, Row F, Seats 35-36", "status": "past", "category": "concert", "source": "Live Nation", "order_number": "48-20350/ARZ", "notes": "Two tickets."}, {"artist": "Tina Fey & Amy Poehler: Restless Leg Tour", "event_date": "2025-05-02", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "comedy", "source": "Calendar", "order_number": "", "notes": "Friday, May 2, 2025, 7:00 PM. The calendar said \"Amy Pohler with Linda\" and was set at 10:00 AM. The published show was 7:00 PM. No seat."}, {"artist": "Aziz Ansari: Hypothetical Tour", "event_date": "2025-02-23", "venue": "Celebrity Theatre", "seat_or_ticket_type": "Section A-9, Row 12, Seats 14 and 13", "status": "past", "category": "comedy", "source": "Etix", "order_number": "388314649", "notes": "Two tickets."}, {"artist": "Morgan Jay", "event_date": "2024-11-02", "venue": "Tempe Improv", "seat_or_ticket_type": "", "status": "past", "category": "comedy", "source": "Calendar", "order_number": "", "notes": "Saturday, November 2, 2024, 7:00 PM. The calendar invite points at 930 E University Drive, which is Tempe Improv. No seat listed."}, {"artist": "Chappell Roan: The Midwest Princess Tour", "event_date": "2024-10-03", "venue": "Westfair Amphitheater", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Thursday, October 3, 2024, in Council Bluffs, Iowa. The calendar said \"CHAPPELL ROAN IN COUNCIL BLUFFS\" and did not list a time or seat. The published show was at Westfair Amphitheater."}, {"artist": "Shania Twain", "event_date": "2024-09-07", "venue": "Bakkt Theater, Planet Hollywood Resort & Casino", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Saturday, September 7, 2024, in Las Vegas. The calendar was an all-day \"Shania Twain\" entry, so the start time and seat are unknown."}, {"artist": "Arizona Diamondbacks vs. Atlanta Braves", "event_date": "2024-07-10", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "57-58002/ARZ", "notes": "Also on the calendar from the ticket email. Seat not in the messages read so far."}, {"artist": "John Mulaney in Concert", "event_date": "2023-12-31", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "", "status": "past", "category": "comedy", "source": "Ticketmaster", "order_number": "21-26066/ARZ", "notes": "On the Ticketmaster past-events list. Seat email not found yet."}, {"artist": "The Sphere Experience: Postcard from Earth", "event_date": "2023-11-22", "venue": "Sphere", "seat_or_ticket_type": "Sec 407, Row 9, Seats 1-2", "status": "past", "category": "other", "source": "Ticketmaster", "order_number": "31-15502/NEV", "notes": "Two tickets. Kept because it was a Ticketmaster order, outside the concert, comedy, and sports categories."}, {"artist": "Arizona Diamondbacks vs. Philadelphia Phillies, NLCS Game 2", "event_date": "2023-10-20", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "transferred", "category": "sports", "source": "Ticketmaster", "order_number": "35-18854/ARZ", "notes": "Transfer to Ciro Affronti was accepted."}, {"artist": "The Postal Service & Death Cab for Cutie: Give Up & Transatlanticism", "event_date": "2023-10-03", "venue": "Arizona Financial Theatre", "seat_or_ticket_type": "Sec 7, Row 23, Seats 9-10", "status": "past", "category": "concert", "source": "Live Nation", "order_number": "30-45699/ARZ", "notes": "Tuesday, October 3, 2023, 7:00 PM. Jessamy forwarded the Live Nation confirmation. Two tickets."}, {"artist": "Eric Church: The Outsiders Revival Tour", "event_date": "2023-09-16", "venue": "Talking Stick Resort Amphitheatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Live Nation", "order_number": "3-28668/ARZ", "notes": "Confirmation has no section or row. It says general parking was included. Total charged $121.04."}, {"artist": "Arizona Diamondbacks vs. Atlanta Braves", "event_date": "2023-06-02", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "46-58423/ARZ", "notes": "Seat email not matched yet."}, {"artist": "World Baseball Classic: Great Britain vs. USA", "event_date": "2023-03-11", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "34-56037/ARZ", "notes": "Seat email not matched yet."}, {"artist": "2023 College Football Playoff National Championship: Georgia v TCU", "event_date": "2023-01-09", "venue": "SoFi Stadium", "seat_or_ticket_type": "Sec 418, Row 2, Seats 23-24", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "2900-0494-0217-0614-5", "notes": "Two tickets. 4:30 PM."}, {"artist": "Arizona Diamondbacks vs. Atlanta Braves", "event_date": "2022-05-30", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "51-57726/ARZ", "notes": "Also on the calendar from the ticket email. Seat not in the messages read so far."}, {"artist": "College Football Playoff National Championship: Georgia v Alabama", "event_date": "2022-01-10", "venue": "Lucas Oil Stadium", "seat_or_ticket_type": "Sec 644, Row 19, Seat 11", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "3000-0544-0481-5726-2", "notes": "One seat. The confirmation arrived the day of the game."}, {"artist": "Arizona Diamondbacks vs. Atlanta Braves", "event_date": "2020-03-27", "venue": "Chase Field", "seat_or_ticket_type": "", "status": "cancelled", "category": "sports", "source": "Ticketmaster", "order_number": "23-23933/ARZ", "notes": "MLB suspended the season on 2020-03-12, so this date was not played. Refund not confirmed from email."}, {"artist": "Atlanta Braves vs. St. Louis Cardinals, NLDS Game 2", "event_date": "2019-10-04", "venue": "SunTrust Park", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "1-55688/ATL", "notes": "Night game at SunTrust Park. The Braves won 3-0. Accepted a transfer from Michael. Jessamy's calendar entry that day only said \"Braves game.\" Ticketmaster now lists the park as Truist Park. Parking is order 61-42073/ATL."}, {"artist": "Atlanta Braves vs. St. Louis Cardinals, NLDS Game 2 parking", "event_date": "2019-10-04", "venue": "SunTrust Park", "seat_or_ticket_type": "parking", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "61-42073/ATL", "notes": "Parking pass for the Cardinals NLDS game the same night at SunTrust Park."}, {"artist": "Atlanta Braves vs. Philadelphia Phillies", "event_date": "2019-06-14", "venue": "SunTrust Park", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Calendar", "order_number": "", "notes": "Night game. The Braves beat the Phillies 9-8 in a walk-off. The shared calendar only said \"Lee - Braves game for work.\" No ticket email, so the seat is still unknown."}, {"artist": "2018 College Football Playoff National Championship: Alabama v Georgia", "event_date": "2018-01-08", "venue": "Mercedes-Benz Stadium", "seat_or_ticket_type": "Section 305, Row 25, Seats 13 and 14", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "180105-13388", "notes": "Accepted a transfer from Leslie F Morrow. The confirmation only said \"2018 CFP National Championship\" at Mercedes-Benz Stadium, 8:00 PM. Alabama beat Georgia in overtime."}, {"artist": "LCD Soundsystem", "event_date": "2017-10-21", "venue": "Coca-Cola Roxy", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "From the Lee Concerts sheet."}, {"artist": "Sufjan Stevens", "event_date": "2015-11-05", "venue": "Cobb Energy Center", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Gallant opened."}, {"artist": "Garth Brooks", "event_date": "2014-09-20", "venue": "Philips Arena", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Two shows that Saturday, 6:30 PM and 10:30 PM. The shared calendar only said \"Garth Brooks.\" A friend forwarded the Philips Arena arrival note, which does not list a seat or which show. The arena is now State Farm Arena."}, {"artist": "Atlanta Braves vs. New York Mets", "event_date": "2014-09-19", "venue": "Turner Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Calendar", "order_number": "", "notes": "Night game. The Braves lost to the Mets 0-5. The calendar only said \"Ryan's Braves game birthday.\" No ticket email, so the seat is still unknown."}, {"artist": "Blair Crimmins", "event_date": "2014-08-01", "venue": "", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Friday, August 1, 2014, 10:00 PM. The calendar said \"Blair Crimmins Show\" and did not name a venue. No published listing matched that night, so the venue and seat are still blank."}, {"artist": "Shaky Knees Music Festival", "event_date": "2014-05-11", "venue": "Atlantic Station", "seat_or_ticket_type": "GENADM, 2 three-day passes", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "50-30432/ATL", "notes": "Sunday, May 11, 2014 at Atlantic Station. Same three-day passes, order 50-30432/ATL. Ticketmaster's past list shows the pass on May 11. Lineup: Benjamin Booker, Paperbird, Crass Mammoth, San Fermin, Langhorne Slim, Mason Jennings, Deer Tick, The Weeks, Blitzen Trapper, Jason Isbell and the 400 Unit, Iron and Wine, Jackie Greene, The Hold Steady, Trampled by Turtles, Kopecky Family Band, Local Natives, Edward Sharpe and the Magnetic Zeros, Violent Femmes, and Alabama Shakes."}, {"artist": "Shaky Knees Music Festival", "event_date": "2014-05-10", "venue": "Atlantic Station", "seat_or_ticket_type": "GENADM, 2 three-day passes", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "50-30432/ATL", "notes": "Saturday, May 10, 2014 at Atlantic Station. Same three-day passes, order 50-30432/ATL. Ticketmaster's past list shows the pass on May 11. Lineup: Fly Golden Eagle, Wake Owl, Packway Handle Band, The Apache Relay, Gregory Alan Isakov, Hayes Carll, The Districts, Tokyo Police Club, Lord Huron, The Lone Bellow, Dawes, Phox, Cold War Kids, Portugal. The Man, Conor Oberst, Houndmouth, Jenny Lewis, The Replacements, and Modest Mouse."}, {"artist": "Shaky Knees Music Festival", "event_date": "2014-05-09", "venue": "Atlantic Station", "seat_or_ticket_type": "GENADM, 2 three-day passes", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "50-30432/ATL", "notes": "Friday, May 9, 2014 at Atlantic Station. Same three-day passes, order 50-30432/ATL. Ticketmaster's past list shows the pass on May 11. The Devil Makes Three, Hurray for the Riff Raff, and Foy Vance were on the bill, but the published schedule did not assign them a day. Lineup: American Aquarium, Mutual Benefit, Blood Red Shoes, Sleeper Agent, The Whigs, Wild Belle, Bright Light Social Hour, White Denim, Band of Skulls, Charles Bradley, Dropkick Murphys, Man Man, Foals, Airborne Toxic Event, Cage the Elephant, Graveyard, Spoon, The Gaslight Anthem, and The National."}, {"artist": "Arcade Fire", "event_date": "2014-05-02", "venue": "Aaron's Amphitheatre at Lakewood", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: tUnE-yArDs and Kid Koala."}, {"artist": "fun.", "event_date": "2013-10-08", "venue": "Verizon Wireless Amphitheatre at Encore Park", "seat_or_ticket_type": "section ORCHGA, 2 tickets", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "33-45413/ATL", "notes": "Included parking. The venue is now Ameris Bank Amphitheatre."}, {"artist": "The National", "event_date": "2013-09-09", "venue": "Cobb Energy Center", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Frightened Rabbit opened."}, {"artist": "Edward Sharpe and the Magnetic Zeros", "event_date": "2013-06-15", "venue": "Candler Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Midsummer Music Festival."}, {"artist": "The Tallest Man on Earth", "event_date": "2013-06-09", "venue": "Variety Playhouse", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Strand of Oaks opened."}, {"artist": "The Antlers", "event_date": "2013-05-05", "venue": "Old Fourth Ward Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Shaky Knees Festival. Openers: Heartless Bastards and Dr. Dog."}, {"artist": "Band of Horses", "event_date": "2013-05-04", "venue": "Old Fourth Ward Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Shaky Knees Festival. The Joy Formidable opened."}, {"artist": "Frightened Rabbit", "event_date": "2013-04-10", "venue": "Masquerade", "seat_or_ticket_type": "section HEAVEN, 2 tickets", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "13-25737/ATL", "notes": "Wintersleep opened."}, {"artist": "Randy Houser", "event_date": "2013-03-02", "venue": "Wild Bills, Duluth, GA", "seat_or_ticket_type": "GENADM, 1 ticket", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "50-23750/ATL", "notes": "Ticketmaster's past-events page lists the venue as Atlanta Coliseum."}, {"artist": "Eric Church: The Blood, Sweat & Beers Tour", "event_date": "2012-11-29", "venue": "The Arena at Gwinnett Center", "seat_or_ticket_type": "section F3, row P, seats 10-9", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "3-12874/ATL", "notes": "Two paperless tickets. Justin Moore and Kip Moore opened. The arena is now Gas South Arena."}, {"artist": "Divine Fits", "event_date": "2012-10-29", "venue": "Terminal West", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Monday, October 29, 2012, 9:00 PM in Atlanta. Cold Cave opened. The calendar said \"Divine Fits Show.\" No seat."}, {"artist": "The Hold Steady", "event_date": "2012-10-11", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The Jealous Sound opened."}, {"artist": "Jack White", "event_date": "2012-10-09", "venue": "Fox Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "The shared calendar only said \"Jack White.\" Pokey LaFarge opened. No ticket email, so the seat is unknown."}, {"artist": "Music Midtown", "event_date": "2012-09-22", "venue": "Piedmont Park", "seat_or_ticket_type": "section GA14, 1 two-day pass", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "64-46989/ATL", "notes": "Saturday, September 22, 2012 at Piedmont Park. Same two-day pass as Friday, order 64-46989/ATL. Lineup: Pearl Jam, Girl Talk, Florence + the Machine, Neon Trees, Ludacris, Adam Ant, Garbage, LP, Civil Twilight, and O'Brother."}, {"artist": "Music Midtown", "event_date": "2012-09-21", "venue": "Piedmont Park", "seat_or_ticket_type": "section GA14, 1 two-day pass", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "64-46989/ATL", "notes": "Friday, September 21, 2012 at Piedmont Park. One two-day pass, also used Saturday. Lineup: Foo Fighters, The Avett Brothers, T.I., Joan Jett & the Blackhearts, and Van Hunt."}, {"artist": "My Morning Jacket", "event_date": "2012-08-24", "venue": "Verizon Wireless Amphitheatre at Encore Park", "seat_or_ticket_type": "section LAWN, 2 tickets", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "9-52610/ATL", "notes": "Band of Horses opened. Parking included. The venue is now Ameris Bank Amphitheatre."}, {"artist": "Atlanta Braves vs. San Diego Padres", "event_date": "2012-08-16", "venue": "Turner Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Ticketmaster", "order_number": "42-56104/ATL", "notes": "Seat email not matched yet."}, {"artist": "Mumford & Sons: Gentlemen of the Road Stopover", "event_date": "2012-08-11", "venue": "State Street, Bristol, Virginia", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Saturday, August 11, 2012. The calendar said \"Mumford & sons in bristol\" and was marked 8:00 AM. Published bill: Mumford & Sons, Dawes, HAIM, JEFF the Brotherhood, Justin Townes Earle, The Apache Relay, The Very Best, and Simone Felice. That is the bill, not the running order. No seat."}, {"artist": "Blair Crimmins & the Hookers", "event_date": "2012-08-10", "venue": "The Goat Farm", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Friday, August 10, 2012, 7:00 PM in Atlanta. The calendar said \"Blair crimmins @The Goat Farm.\" No seat."}, {"artist": "Blair Crimmins & the Hookers", "event_date": "2012-07-20", "venue": "The EARL", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Friday, July 20, 2012, 9:00 PM in Atlanta. The calendar only said \"Blair crimmins.\" No seat."}, {"artist": "He's My Brother She's My Sister", "event_date": "2012-07-19", "venue": "", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Thursday, July 19, 2012, 8:00 PM. The calendar spelled it \"Hes my brother shes my sister.\" No published venue matched that night, so the venue and seat are still blank."}, {"artist": "Atlanta Braves vs. Toronto Blue Jays", "event_date": "2012-06-09", "venue": "Turner Field", "seat_or_ticket_type": "", "status": "past", "category": "sports", "source": "Calendar", "order_number": "", "notes": "Saturday, June 9, 2012. The calendar said \"Braves Game\" at 3:00 PM. The Braves beat the Blue Jays 5-2 at home. No ticket email, so the seat is unknown."}, {"artist": "Bon Iver", "event_date": "2012-06-08", "venue": "Verizon Wireless Amphitheatre at Encore Park", "seat_or_ticket_type": "Orchestra 3, Row F, Seats 1-4", "status": "past", "category": "concert", "source": "Email", "order_number": "20120404001826-962-54794", "notes": "Friday, June 8, 2012, 7:00 PM. Michael Wachsman bought the four seats and forwarded the CrowdSurge confirmation. The shared calendar only said \"Bon Iver.\" The venue is now Ameris Bank Amphitheatre."}, {"artist": "Jason Aldean with Luke Bryan", "event_date": "2012-05-19", "venue": "Aaron's Amphitheatre at Lakewood", "seat_or_ticket_type": "section LAWN, 2 tickets", "status": "past", "category": "concert", "source": "Live Nation", "order_number": "10-46441/ATL", "notes": "A later email thanked him for attending."}, {"artist": "Blair Crimmins & the Hookers, Kirkwoodfest", "event_date": "2012-05-19", "venue": "Kirkwoodfest, Atlanta", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Saturday, May 19, 2012. The calendar said \"Blair crimmins & the hookers Kirkwoodfest\" and was marked 8:00 AM. The Jason Aldean show at Lakewood is a separate entry the same day. No seat for the festival."}, {"artist": "Blair Crimmins & the Hookers, Springfest", "event_date": "2012-05-12", "venue": "Twain's", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Saturday, May 12, 2012. The calendar said \"Blair Crimmins & the hookers, springfest@twains\" and was marked 8:00 AM. No seat."}, {"artist": "Punch Brothers", "event_date": "2012-04-21", "venue": "Variety Playhouse", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Saturday, April 21, 2012, in Atlanta. Jesca Hoop was on the bill. The calendar was all day and did not list a start time or a seat."}, {"artist": "The Ting Tings", "event_date": "2012-04-16", "venue": "Variety Playhouse", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Calendar", "order_number": "", "notes": "Monday, April 16, 2012, in Atlanta. MNDR opened. The calendar said \"Ting Tings VP\" and was marked 7:00 AM, so that clock time is not the showtime. No seat."}, {"artist": "Craig Finn", "event_date": "2012-03-05", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Marcellus Hall opened."}, {"artist": "Florida Georgia Line", "event_date": "2012-02-17", "venue": "The Peachtree Tavern", "seat_or_ticket_type": "2 tickets, no reserved seats", "status": "past", "category": "concert", "source": "Etix", "order_number": "38348893", "notes": "With The Cadillac Black and The John King Band. 21 and over. 10:00 PM."}, {"artist": "Tool", "event_date": "2012-02-08", "venue": "The Arena at Gwinnett Center", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Yob opened. The arena is now Gas South Arena."}, {"artist": "The Raconteurs", "event_date": "2011-11-13", "venue": "The Tabernacle", "seat_or_ticket_type": "GENADM", "status": "past", "category": "concert", "source": "Sheet", "order_number": "23-22682/ATL", "notes": "Live Nation order 23-22682/ATL, general admission."}, {"artist": "Foo Fighters", "event_date": "2011-11-07", "venue": "The Arena at Gwinnett Center", "seat_or_ticket_type": "section GAFLR, 1 ticket", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "45-33913/ATL", "notes": "Social Distortion and The Joy Formidable opened. The arena is now Gas South Arena."}, {"artist": "Jamey Johnson", "event_date": "2011-10-28", "venue": "Wild Bills, Duluth, GA", "seat_or_ticket_type": "GENADM, 2 tickets", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "7-15223/ATL", "notes": "Ticketmaster's past-events page lists the venue as Atlanta Coliseum."}, {"artist": "St. Vincent", "event_date": "2011-10-28", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Same date as the Jamey Johnson show at Wild Bills."}, {"artist": "Darius Rucker", "event_date": "2011-09-17", "venue": "Chastain Park Amphitheatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Sunny Sweeney opened."}, {"artist": "TV on the Radio and Broken Social Scene", "event_date": "2011-09-13", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Billed together on the Lee Concerts sheet."}, {"artist": "The Hold Steady", "event_date": "2011-08-30", "venue": "Variety Playhouse", "seat_or_ticket_type": "GENADM, 1 ticket", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "23-34984/ATL", "notes": "The Donkeys opened. Tickets were mailed."}, {"artist": "Willie Nelson's Country Throwdown Tour", "event_date": "2011-06-12", "venue": "Coolray Field", "seat_or_ticket_type": "section FIELD, 4 tickets", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "6-59677/ATL", "notes": "Ticketmaster's past-events page lists the venue as Gwinnett Field. Tickets were mailed."}, {"artist": "Fleet Foxes", "event_date": "2011-05-14", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The Cave Singers opened."}, {"artist": "The Decemberists", "event_date": "2011-05-02", "venue": "Cobb Energy Center", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Justin Townes Earle opened."}, {"artist": "The Avett Brothers", "event_date": "2011-04-10", "venue": "Turner Field", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "From the Lee Concerts sheet. No opponent is listed, so this is recorded as a concert rather than a Braves game."}, {"artist": "Band of Horses", "event_date": "2011-04-02", "venue": "Verizon Wireless Amphitheatre at Encore Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The Jayhawks and Ed Roland & the Sweet Tea Project opened. The venue is now Ameris Bank Amphitheatre."}, {"artist": "Bright Eyes", "event_date": "2011-03-04", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Cursive opened."}, {"artist": "Pat Green", "event_date": "2011-02-18", "venue": "Buckhead Theatre", "seat_or_ticket_type": "GENADM, 1 ticket", "status": "past", "category": "concert", "source": "Ticketmaster", "order_number": "26-38956/ATL", "notes": ""}, {"artist": "Broken Social Scene", "event_date": "2011-02-10", "venue": "The Buckhead Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Zeus opened."}, {"artist": "Free Energy", "event_date": "2011-02-09", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: The Postelles and Turf War."}, {"artist": "The Black Crowes", "event_date": "2010-11-20", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Second night. From the Lee Concerts sheet."}, {"artist": "The Black Crowes", "event_date": "2010-11-19", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "From the Lee Concerts sheet."}, {"artist": "Band of Horses", "event_date": "2010-10-30", "venue": "Fox Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Jenny & Johnny opened."}, {"artist": "The National", "event_date": "2010-10-05", "venue": "Fox Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Owen Pallett opened."}, {"artist": "LCD Soundsystem", "event_date": "2010-10-04", "venue": "The Tabernacle", "seat_or_ticket_type": "GENADM", "status": "past", "category": "concert", "source": "Sheet", "order_number": "32-19889/ATL", "notes": "Sleigh Bells opened. Live Nation order 32-19889/ATL."}, {"artist": "Titus Andronicus", "event_date": "2010-09-20", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: Free Energy and Turf War."}, {"artist": "Surfer Blood", "event_date": "2010-09-15", "venue": "The Loft", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The Drums opened."}, {"artist": "The Avett Brothers", "event_date": "2010-09-10", "venue": "Chastain Park Amphitheatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Brandi Carlile opened."}, {"artist": "The New Pornographers", "event_date": "2010-06-26", "venue": "Variety Playhouse", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The Dodos opened."}, {"artist": "Better Than Ezra", "event_date": "2010-06-19", "venue": "Candler Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Midsummer Music Festival. Openers: The Wailers and Ivan Neville's Dumpstaphunk."}, {"artist": "Tonic", "event_date": "2010-06-05", "venue": "Virginia-Highland Summerfest", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Bob Schneider opened."}, {"artist": "The Hold Steady", "event_date": "2010-05-27", "venue": "Variety Playhouse", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Twin Tigers opened."}, {"artist": "The Hold Steady", "event_date": "2010-05-26", "venue": "40 Watt Club", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Twin Tigers opened."}, {"artist": "The Tallest Man on Earth", "event_date": "2010-04-28", "venue": "The Earl", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Nurses opened."}, {"artist": "Frightened Rabbit", "event_date": "2010-04-24", "venue": "The Masquerade", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: The Middle East and Bad Veins."}, {"artist": "My Morning Jacket", "event_date": "2010-04-23", "venue": "Chastain Park Amphitheatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Preservation Hall Jazz Band opened."}, {"artist": "Vampire Weekend", "event_date": "2010-04-08", "venue": "The Tabernacle", "seat_or_ticket_type": "Section GA", "status": "past", "category": "concert", "source": "Sheet", "order_number": "123462183", "notes": "Abe Vigoda opened. Live Nation order 123462183."}, {"artist": "Ted Leo and the Pharmacists", "event_date": "2010-04-04", "venue": "The Masquerade", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: Screaming Females and Gentlemen Jessie and His Men."}, {"artist": "Spoon", "event_date": "2010-03-20", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Openers: Deerhunter and The Strange Boys."}, {"artist": "Surfer Blood", "event_date": "2010-02-19", "venue": "Drunken Unicorn", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Turbo Fruits opened."}, {"artist": "Them Crooked Vultures", "event_date": "2010-02-11", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "All the Saints opened."}, {"artist": "Monsters of Folk", "event_date": "2009-11-11", "venue": "The Tabernacle", "seat_or_ticket_type": "Section GA", "status": "past", "category": "concert", "source": "Sheet", "order_number": "122382206", "notes": "Live Nation order 122382206, general admission."}, {"artist": "The Hold Steady and Drive-By Truckers", "event_date": "2008-11-01", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Billed together on the Lee Concerts sheet."}, {"artist": "Jason Aldean", "event_date": "2007-09-27", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Thursday, September 27, 2007 in Athens, Georgia."}, {"artist": "Pat Green", "event_date": "2007-09-05", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Wednesday, September 5, 2007 in Athens, Georgia."}, {"artist": "Corey Smith and Tim Brantley", "event_date": "2006-11-24", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Friday, November 24, 2006 in Athens, Georgia."}, {"artist": "Luke Bryan", "event_date": "2006-11-18", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Saturday, November 18, 2006 in Athens, Georgia."}, {"artist": "Zac Brown Band", "event_date": "2006-10-20", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Friday, October 20, 2006 in Athens, Georgia."}, {"artist": "Cross Canadian Ragweed and Micky and the Motorcars", "event_date": "2006-10-18", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Wednesday, October 18, 2006 in Athens, Georgia."}, {"artist": "Luke Bryan", "event_date": "2006-08-19", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Saturday, August 19, 2006 in Athens, Georgia."}, {"artist": "Corey Smith and Sam Thacker", "event_date": "2006-08-18", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Friday, August 18, 2006 in Athens, Georgia."}, {"artist": "Luke Bryan", "event_date": "2006-04-22", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Saturday, April 22, 2006 in Athens, Georgia."}, {"artist": "Corey Smith and Brantley Gilbert and Grayson Hill", "event_date": "2006-02-24", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Friday, February 24, 2006 in Athens, Georgia."}, {"artist": "Cross Canadian Ragweed", "event_date": "2006-02-03", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Friday, February 3, 2006 in Athens, Georgia."}, {"artist": "Pat Green and Luke Bryan", "event_date": "2005-10-12", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Wednesday, October 12, 2005 in Athens, Georgia."}, {"artist": "Weezer", "event_date": "2005-07-16", "venue": "Underground Atlanta", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "99X Downtown Rocks."}, {"artist": "Gary Allan", "event_date": "2005-05-21", "venue": "Hi-Fi Buys Amphitheatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "Country Fair at Lakewood. This amphitheatre was later Aaron's Amphitheatre at Lakewood."}, {"artist": "The Black Crowes", "event_date": "2005-05-06", "venue": "The Tabernacle", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "From the Lee Concerts sheet."}, {"artist": "Dierks Bentley and Cross Canadian Ragweed", "event_date": "2004-09-15", "venue": "Georgia Theatre", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Wednesday, September 15, 2004 in Athens, Georgia."}, {"artist": "Kenny Chesney", "event_date": "2004-01-24", "venue": "40 Watt Club", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "", "order_number": "", "notes": "Saturday, January 24, 2004 in Athens, Georgia. Uncle Kracker opened."}, {"artist": "3 Doors Down", "event_date": "2003-07-25", "venue": "Stone Mountain Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "99X The Big Rock. Openers: Our Lady Peace, Seether, and Shinedown."}, {"artist": "Hoobastank", "event_date": "2003-07-18", "venue": "Stone Mountain Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "99X The Big Rock. Black Eyed Peas opened."}, {"artist": "George Strait", "event_date": "2003-02-21", "venue": "The Arena at Gwinnett Center", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "The arena is now Gas South Arena."}, {"artist": "Sevendust", "event_date": "2002-08-02", "venue": "Baker Street Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "99X Downtown Rocks."}, {"artist": "Default", "event_date": "2002-06-21", "venue": "Baker Street Park", "seat_or_ticket_type": "", "status": "past", "category": "concert", "source": "Sheet", "order_number": "", "notes": "99X Downtown Rocks. Supafuzz opened."}];
+const cats = ["all", "concert", "comedy", "sports", "other"];
+const statuses = ["all", "upcoming", "past", "transferred", "cancelled"];
+const state = { q: "", act: "", category: "all", status: "all", year: "all", venue: "", newest: true, missing: false };
+
+
+function fmt(iso) {
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+function norm(s) {
+  return s.toLowerCase().replace(/\bvs\.?\b/g, "v").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function matches(s) {
+  if (state.category !== "all" && s.category !== state.category) return false;
+  if (state.status !== "all" && s.status !== state.status) return false;
+  if (state.year !== "all" && !s.event_date.startsWith(state.year)) return false;
+  if (state.venue) {
+    const want = state.venue === "Venue not recorded" ? "" : state.venue;
+    if ((s.venue || "") !== want) return false;
+  }
+  if (state.missing && s.seat_or_ticket_type.trim()) return false;
+  if (state.act) return actsFor(s).includes(state.act);
+  if (!state.q) return true;
+  const hay = norm([s.artist, s.venue, s.seat_or_ticket_type, s.notes, s.order_number, s.source, s.status, s.category].join(" "));
+  return hay.includes(norm(state.q));
+}
+
+
+
+
+const PROTECTED = [
+  "Edward Sharpe and the Magnetic Zeros",
+  "Ryan Bingham and the Texas Gentlemen",
+  "Joan Jett & the Blackhearts",
+  "Blair Crimmins & the Hookers",
+  "Florence + the Machine",
+  "He's My Brother She's My Sister",
+  "Mumford & Sons",
+  "Portugal. The Man",
+  "Iron and Wine",
+  "St. Louis Cardinals",
+  "T.I.",
+  "Ed Roland & the Sweet Tea Project",
+  "Jenny & Johnny",
+  "Ted Leo and the Pharmacists",
+  "Gentlemen Jessie and His Men",
+  "Dr. Dog",
+  "Jason Isbell and the 400 Unit",
+  "Micky and the Motorcars"
+];
+function canon(name) {
+  const n = name.replace(/\s+/g, " ").trim();
+  if (/^blair crimmins$/i.test(n)) return "Blair Crimmins & the Hookers";
+  if (/^avett brothers$/i.test(n)) return "The Avett Brothers";
+  if (/^fun$/i.test(n)) return "fun.";
+  return n;
+}
+function tidyToken(raw) {
+  let n = raw.replace(/\s+/g, " ").trim();
+  if (/^(?:[A-Za-z]\.)+$/.test(n)) return n;
+  n = n.replace(/\.+$/g, "").trim();
+  return canon(n);
+}
+function isAct(name) {
+  if (!name || name.length < 2 || name.length > 70) return false;
+  if (/lineup|festival also|surprise guests|kirkwoodfest|springfest/i.test(name)) return false;
+  if (/^\d+$/.test(name)) return false;
+  if (/^\d/.test(name) && !/^3 doors down$/i.test(name)) return false;
+  return true;
+}
+function splitActs(text, sentences) {
+  let s = text;
+  const tokens = [];
+  [...PROTECTED].sort((a, b) => b.length - a.length).forEach(name => {
+    const re = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    s = s.replace(re, () => {
+      const id = "\u0000" + tokens.length + "\u0000";
+      tokens.push(canon(name));
+      return id;
+    });
+  });
+  if (sentences) s = s.replace(/\.\s+/g, ", ");
+  s = s.replace(/,\s+and\s+/gi, ", ");
+  s = s.replace(/\s+&\s+/g, "\n");
+  s = s.replace(/\s+and\s+/gi, "\n");
+  s = s.replace(/\s+with\s+/gi, "\n");
+  s = s.replace(/\s+vs\.?\s+/gi, "\n");
+  s = s.replace(/\s+v\s+/g, "\n");
+  s = s.replace(/\s+\+\s+/g, "\n");
+  s = s.replace(/,/g, "\n");
+  return s.split("\n").map(part => tidyToken(part.replace(/\u0000(\d+)\u0000/g, (_, i) => tokens[Number(i)]))).filter(isAct);
+}
+function headliners(artist) {
+  let s = artist.trim();
+  if (/^the sphere experience\b/i.test(s)) return [];
+  if (/^(fastball comedy festival|shaky knees music festival|music midtown)$/i.test(s)) return [];
+  s = s.replace(/,?\s*nlds game \d+ parking$/i, "");
+  s = s.replace(/,?\s*nlds game \d+$/i, "");
+  s = s.replace(/,?\s*nlcs game \d+$/i, "");
+  s = s.replace(/^\d{4} college football playoff national championship:\s*/i, "");
+  s = s.replace(/^college football playoff national championship:\s*/i, "");
+  s = s.replace(/^world baseball classic:\s*/i, "");
+  s = s.replace(/^an evening with\s+/i, "");
+  s = s.replace(/\s+in concert$/i, "");
+  s = s.replace(/\s+live$/i, "");
+  s = s.replace(/'s country throwdown tour$/i, "");
+  const colon = s.indexOf(":");
+  if (colon !== -1) s = s.slice(0, colon);
+  s = s.replace(/,\s*(kirkwoodfest|springfest)$/i, "");
+  return splitActs(s, false);
+}
+function noteActs(notes) {
+  if (!notes) return [];
+  const chunks = [];
+  const grab = (re) => { const m = notes.match(re); if (m) chunks.push(m[1]); };
+  grab(/Lineup on the ticket:\s*(.+)$/i);
+  grab(/Friday lineup:\s*(.+?)(?=Saturday lineup:|$)/i);
+  grab(/Saturday lineup:\s*(.+)$/i);
+  grab(/Published bill:\s*([^.]+)/i);
+  grab(/published bill also lists\s*([^.]+)/i);
+  grab(/^With\s+([^.]+)/);
+  grab(/(?:^|\.\s+)Lineup:\s*(.+?)(?:\s+The festival also|$)/i);
+  const openerHit = notes.match(/Openers:\s*(.+)/i);
+  if (openerHit) {
+    let chunk = openerHit[1].replace(/\b(Dr|Mr|St|Jr|Sr)\.\s+/g, "$1\u0001 ");
+    chunk = chunk.split(/\.\s+/)[0].replace(/\u0001/g, ".");
+    chunks.push(chunk);
+  }
+  for (const m of notes.matchAll(/(?:^|\.\s+)([A-Z][^.]{1,90}?)\s+(?:opened|was on the bill|were on the bill)/g)) chunks.push(m[1]);
+  const months = /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}\b\s*/g;
+  return chunks.flatMap(chunk => splitActs(chunk.replace(months, " "), true));
+}
+function actsFor(show) {
+  return [...new Set([...headliners(show.artist), ...noteActs(show.notes)])];
+}
+function showArt(show) {
+  const heads = headliners(show.artist);
+  for (const name of heads) if (ART[name]) return ART[name];
+  if (!heads.length) {
+    for (const name of noteActs(show.notes)) if (ART[name]) return ART[name];
+    if (/sphere/i.test(show.artist) && ART["Sphere"]) return ART["Sphere"];
+  }
+  return "";
+}
+function sortKey(name) {
+  return name.replace(/^the\s+/i, "");
+}
+const rosterCounts = new Map();
+const rosterCats = new Map();
+SHOWS.forEach(s => {
+  const heads = new Set(headliners(s.artist));
+  actsFor(s).forEach(name => {
+    rosterCounts.set(name, (rosterCounts.get(name) || 0) + 1);
+    if (!rosterCats.has(name)) rosterCats.set(name, new Map());
+    const bag = rosterCats.get(name);
+    bag.set(s.category, (bag.get(s.category) || 0) + (heads.has(name) ? 3 : 1));
+  });
+});
+function mainCategory(name) {
+  const bag = rosterCats.get(name);
+  let best = "concert", n = -1;
+  if (!bag) return best;
+  for (const [cat, count] of bag) if (count > n) { best = cat; n = count; }
+  return best;
+}
+const ROSTER = [...rosterCounts.entries()]
+  .map(([name, count]) => ({ name, count, category: mainCategory(name) }))
+  .sort((a, b) => sortKey(a.name).localeCompare(sortKey(b.name), "en", { sensitivity: "base" }));
+
+const ART = {"3 Doors Down": "images/3-doors-down.jpg", "Abe Vigoda": "images/abe-vigoda.jpg", "Adam Ant": "images/adam-ant.jpg", "Airborne Toxic Event": "images/airborne-toxic-event.jpg", "Alabama": "images/alabama.png", "Alabama Shakes": "images/alabama-shakes.jpg", "Colony House": "images/colony-house.jpg", "Conor Oberst": "images/conor-oberst.jpg", "Craig Finn": "images/craig-finn.jpg", "Cursive": "images/cursive.jpg", "Darius Rucker": "images/darius-rucker.jpg", "Dashboard Confessional": "images/dashboard-confessional.jpg", "Tonic": "images/tonic.jpg", "Tool": "images/tool.jpg", "American Aquarium": "images/american-aquarium.jpg", "Amy Poehler": "images/amy-poehler.jpg", "Andrew Santino": "images/andrew-santino.png", "Arcade Fire": "images/arcade-fire.jpg", "Arizona Diamondbacks": "images/arizona-diamondbacks.png", "Atlanta Braves": "images/atlanta-braves.png", "Aziz Ansari": "images/aziz-ansari.jpg", "Band of Horses": "images/band-of-horses.jpg", "Band of Skulls": "images/band-of-skulls.jpg", "Benjamin Booker": "images/benjamin-booker.jpg", "Better Than Ezra": "images/better-than-ezra.jpg", "Bill Burr": "images/bill-burr.jpg", "Black Eyed Peas": "images/black-eyed-peas.jpg", "Blitzen Trapper": "images/blitzen-trapper.jpg", "Bon Iver": "images/bon-iver.jpg", "Brandi Carlile": "images/brandi-carlile.jpg", "Bright Eyes": "images/bright-eyes.jpg", "Bright Light Social Hour": "images/bright-light-social-hour.jpg", "Broken Social Scene": "images/broken-social-scene.jpg", "CA7RIEL": "images/ca7riel.jpg", "Cage the Elephant": "images/cage-the-elephant.jpg", "Chappell Roan": "images/chappell-roan.jpg", "Civil Twilight": "images/civil-twilight.jpg", "Cold Cave": "images/cold-cave.png", "Cold War Kids": "images/cold-war-kids.jpg", "Dave Chappelle": "images/dave-chappelle.jpg", "Dawes": "images/dawes.jpg", "Deer Tick": "images/deer-tick.jpg", "Deerhunter": "images/deerhunter.jpg", "Divine Fits": "images/divine-fits.jpg", "Dr. Dog": "images/dr-dog.jpg", "Drive-By Truckers": "images/drive-by-truckers.jpg", "Dropkick Murphys": "images/dropkick-murphys.jpg", "Edward Sharpe and the Magnetic Zeros": "images/edward-sharpe-and-the-magnetic-zeros.jpg", "Eric Church": "images/eric-church.jpg", "Fleet Foxes": "images/fleet-foxes.jpg", "Florence + the Machine": "images/florence-the-machine.jpg", "Florida Georgia Line": "images/florida-georgia-line.jpg", "Foals": "images/foals.jpg", "Foo Fighters": "images/foo-fighters.jpg", "Foy Vance": "images/foy-vance.jpg", "Frightened Rabbit": "images/frightened-rabbit.jpg", "Gallant": "images/gallant.jpg", "Garbage": "images/garbage.jpg", "Garth Brooks": "images/garth-brooks.jpg", "Gary Allan": "images/gary-allan.jpg", "George Strait": "images/george-strait.jpg", "Georgia": "images/georgia.png", "Girl Talk": "images/girl-talk.jpg", "Graveyard": "images/graveyard.jpg", "Great Britain": "images/great-britain.png", "Gregory Alan Isakov": "images/gregory-alan-isakov.jpg", "Hatesphere": "images/hatesphere.jpg", "Hayes Carll": "images/hayes-carll.jpg", "He's My Brother She's My Sister": "images/he-s-my-brother-she-s-my-sister.jpg", "Heartless Bastards": "images/heartless-bastards.jpg", "Hoobastank": "images/hoobastank.jpg", "Hurray for the Riff Raff": "images/hurray-for-the-riff-raff.jpg", "Iron and Wine": "images/iron-and-wine.jpg", "JEFF the Brotherhood": "images/jeff-the-brotherhood.jpg", "Jack White": "images/jack-white.jpg", "Jackie Greene": "images/jackie-greene.jpg", "Jamey Johnson": "images/jamey-johnson.jpg", "Jason Aldean": "images/jason-aldean.jpg", "Jason Isbell": "images/jason-isbell.jpg", "Jenny & Johnny": "images/jenny-johnny.jpg", "Jenny Lewis": "images/jenny-lewis.jpg", "Jesca Hoop": "images/jesca-hoop.jpg", "Joan Jett & the Blackhearts": "images/joan-jett-the-blackhearts.jpg", "John Mulaney": "images/john-mulaney.jpg", "Justin Moore": "images/justin-moore.jpg", "Justin Townes Earle": "images/justin-townes-earle.jpg", "Kid Koala": "images/kid-koala.jpg", "Kip Moore": "images/kip-moore.jpg", "Kopecky Family Band": "images/kopecky-family-band.jpg", "LCD Soundsystem": "images/lcd-soundsystem.jpg", "LP": "images/lp.jpg", "Langhorne Slim": "images/langhorne-slim.jpg", "Local Natives": "images/local-natives.jpg", "Lord Huron": "images/lord-huron.jpg", "Ludacris": "images/ludacris.jpg", "Luke Bryan": "images/luke-bryan.jpg", "MNDR": "images/mndr.jpg", "Man Man": "images/man-man.jpg", "Mason Jennings": "images/mason-jennings.jpg", "Mike Patton": "images/mike-patton.jpg", "Modest Mouse": "images/modest-mouse.jpg", "Monsters of Folk": "images/monsters-of-folk.jpg", "Mumford & Sons": "images/mumford-sons.jpg", "My Morning Jacket": "images/my-morning-jacket.jpg", "Nate Bargatze": "images/nate-bargatze.jpg", "Neon Trees": "images/neon-trees.jpg", "New York Mets": "images/new-york-mets.png", "Nick Offerman": "images/nick-offerman.jpg", "O'Brother": "images/o-brother.jpg", "Obscura": "images/obscura.jpg", "Our Lady Peace": "images/our-lady-peace.jpg", "Owen Pallett": "images/owen-pallett.jpg", "Packway Handle Band": "images/packway-handle-band.jpg", "Paco Amoroso": "images/paco-amoroso.jpg", "Pat Green": "images/pat-green.jpg", "Pearl Jam": "images/pearl-jam.jpg", "Philadelphia Phillies": "images/philadelphia-phillies.png", "Phox": "images/phox.jpg", "Portugal. The Man": "images/portugal-the-man.jpg", "Preservation Hall Jazz Band": "images/preservation-hall-jazz-band.jpg", "Punch Brothers": "images/punch-brothers.jpg", "Randy Houser": "images/randy-houser.jpg", "Ryan Bingham and the Texas Gentlemen": "images/ryan-bingham-and-the-texas-gentlemen.jpg", "San Diego Padres": "images/san-diego-padres.png", "San Fermin": "images/san-fermin.jpg", "Screaming Females": "images/screaming-females.jpg", "Seether": "images/seether.jpg", "Sevendust": "images/sevendust.jpg", "Shane Gillis": "images/shane-gillis.jpg", "Shania Twain": "images/shania-twain.jpg", "Shinedown": "images/shinedown.jpg", "Sleigh Bells": "images/sleigh-bells.jpg", "Social Distortion": "images/social-distortion.jpg", "Spoon": "images/spoon.jpg", "St. Louis Cardinals": "images/st-louis-cardinals.png", "St. Vincent": "images/st-vincent.jpg", "Strand of Oaks": "images/strand-of-oaks.jpg", "Sufjan Stevens": "images/sufjan-stevens.jpg", "Sunny Sweeney": "images/sunny-sweeney.jpg", "Surfer Blood": "images/surfer-blood.jpg", "T.I.": "images/t-i.png", "TCU": "images/tcu.png", "TV on the Radio": "images/tv-on-the-radio.jpg", "Ted Leo and the Pharmacists": "images/ted-leo-and-the-pharmacists.jpg", "The Antlers": "images/the-antlers.jpg", "The Avett Brothers": "images/the-avett-brothers.jpg", "The Black Crowes": "images/the-black-crowes.jpg", "The Black Dahlia Murder": "images/the-black-dahlia-murder.jpg", "The Cave Singers": "images/the-cave-singers.jpg", "The Decemberists": "images/the-decemberists.jpg", "The Devil Makes Three": "images/the-devil-makes-three.jpg", "The Districts": "images/the-districts.jpg", "The Dodos": "images/the-dodos.jpg", "The Donkeys": "images/the-donkeys.jpg", "The Drums": "images/the-drums.jpg", "The Fray": "images/the-fray.jpg", "The Gaslight Anthem": "images/the-gaslight-anthem.jpg", "The Hold Steady": "images/the-hold-steady.jpg", "The Jayhawks": "images/the-jayhawks.jpg", "The Joy Formidable": "images/the-joy-formidable.jpg", "The Lone Bellow": "images/the-lone-bellow.jpg", "The National": "images/the-national.jpg", "The New Pornographers": "images/the-new-pornographers.jpg", "The Raconteurs": "images/the-raconteurs.jpg", "The Replacements": "images/the-replacements.jpg", "The Strange Boys": "images/the-strange-boys.jpg", "The Tallest Man on Earth": "images/the-tallest-man-on-earth.jpg", "The Ting Tings": "images/the-ting-tings.jpg", "The Very Best": "images/the-very-best.jpg", "The Weeks": "images/the-weeks.jpg", "The Whigs": "images/the-whigs.jpg", "Them Crooked Vultures": "images/them-crooked-vultures.jpg", "Tina Fey": "images/tina-fey.jpg", "Titus Andronicus": "images/titus-andronicus.jpg", "Tokyo Police Club": "images/tokyo-police-club.jpg", "Tom Segura": "images/tom-segura.jpg", "Toronto Blue Jays": "images/toronto-blue-jays.png", "Trampled by Turtles": "images/trampled-by-turtles.jpg", "Tyler Childers": "images/tyler-childers.jpg", "USA": "images/usa.png", "Vampire Weekend": "images/vampire-weekend.jpg", "Van Hunt": "images/van-hunt.jpg", "Violent Femmes": "images/violent-femmes.jpg", "Weezer": "images/weezer.jpg", "White Denim": "images/white-denim.jpg", "Wild Belle": "images/wild-belle.jpg", "Willie Nelson": "images/willie-nelson.jpg", "Wintersleep": "images/wintersleep.jpg", "Yob": "images/yob.jpg", "Zach Bryan": "images/zach-bryan.jpg", "Zeus": "images/zeus.jpg", "fun.": "images/fun.jpg", "tUnE-yArDs": "images/tune-yards.jpg", "All the Saints": "images/all-the-saints.jpg", "The Apache Relay": "images/the-apache-relay.jpg", "Bad Veins": "images/bad-veins.jpg", "Blair Crimmins & the Hookers": "images/blair-crimmins-the-hookers.jpg", "Blood Red Shoes": "images/blood-red-shoes.jpg", "Brantley Gilbert": "images/brantley-gilbert.jpg", "Charles Bradley": "images/charles-bradley.jpg", "Corey Smith": "images/corey-smith.jpg", "Crass Mammoth": "images/crass-mammoth.jpg", "Cross Canadian Ragweed": "images/cross-canadian-ragweed.jpg", "Death Cab for Cutie": "images/death-cab-for-cutie.jpg", "Default": "images/default.jpg", "Dierks Bentley": "images/dierks-bentley.jpg", "Ed Roland & the Sweet Tea Project": "images/ed-roland-the-sweet-tea-project.jpg", "Evan Honer": "images/evan-honer.jpg", "Fly Golden Eagle": "images/fly-golden-eagle.jpg", "Free Energy": "images/free-energy.jpg", "HAIM": "images/haim.jpg", "Houndmouth": "images/houndmouth.jpg", "Ivan Neville's Dumpstaphunk": "images/ivan-neville-s-dumpstaphunk.jpg", "Jason Isbell and the 400 Unit": "images/jason-isbell-and-the-400-unit.jpg", "The Jealous Sound": "images/the-jealous-sound.jpg", "Kenny Chesney": "images/kenny-chesney.jpg", "Marcellus Hall": "images/marcellus-hall.jpg", "Micky and the Motorcars": "images/micky-and-the-motorcars.jpg", "The Middle East": "images/the-middle-east.png", "Morgan Jay": "images/morgan-jay.jpg", "Mutual Benefit": "images/mutual-benefit.jpg", "Nurses": "images/nurses.jpg", "Paperbird": "images/paperbird.jpg", "The Postal Service": "images/the-postal-service.jpg", "The Postelles": "images/the-postelles.jpg", "Rachel Feinstein": "images/rachel-feinstein.jpg", "Simone Felice": "images/simone-felice.jpg", "Sleeper Agent": "images/sleeper-agent.jpg", "Supafuzz": "images/supafuzz.jpg", "Tim Brantley": "images/tim-brantley.jpg", "Turbo Fruits": "images/turbo-fruits.jpg", "Twin Tigers": "images/twin-tigers.jpg", "Uncle Kracker": "images/uncle-kracker.jpg", "The Wailers": "images/the-wailers.jpg", "Wake Owl": "images/wake-owl.jpg", "Zac Brown Band": "images/zac-brown-band.jpg", "Sphere": "images/sphere.jpg"};
+
+const VENUE = {"40 Watt Club": "images/venues/40-watt-club.jpg", "Aaron's Amphitheatre at Lakewood": "images/venues/aaron-s-amphitheatre-at-lakewood.jpg", "Arizona Financial Theatre": "images/venues/arizona-financial-theatre.jpg", "Atlantic Station": "images/venues/atlantic-station.jpg", "Bakkt Theater, Planet Hollywood Resort & Casino": "images/venues/bakkt-theater-planet-hollywood-resort-casino.png", "Buckhead Theatre": "images/venues/buckhead-theatre.jpg", "The Buckhead Theatre": "images/venues/buckhead-theatre.jpg", "Candler Park": "images/venues/candler-park.jpg", "Celebrity Theatre": "images/venues/celebrity-theatre.jpg", "Chase Field": "images/venues/chase-field.jpg", "Chastain Park Amphitheatre": "images/venues/chastain-park-amphitheatre.jpg", "Cobb Energy Center": "images/venues/cobb-energy-center.jpg", "Coca-Cola Roxy": "images/venues/coca-cola-roxy.jpg", "Coolray Field": "images/venues/coolray-field.jpg", "Fox Theatre": "images/venues/fox-theatre.jpg", "Georgia Theatre": "images/venues/georgia-theatre.jpg", "Hi-Fi Buys Amphitheatre": "images/venues/aaron-s-amphitheatre-at-lakewood.jpg", "Lucas Oil Stadium": "images/venues/lucas-oil-stadium.jpg", "Masquerade": "images/venues/masquerade.jpg", "The Masquerade": "images/venues/masquerade.jpg", "Mercedes-Benz Stadium": "images/venues/mercedes-benz-stadium.jpg", "Mortgage Matchup Center (formerly PHX Arena)": "images/venues/mortgage-matchup-center-formerly-phx-arena.jpg", "Old Fourth Ward Park": "images/venues/old-fourth-ward-park.jpg", "Philips Arena": "images/venues/philips-arena.jpg", "PHX Arena (formerly Footprint Center)": "images/venues/phx-arena-formerly-footprint-center.jpg", "Piedmont Park": "images/venues/piedmont-park.jpg", "Sloan Park": "images/venues/sloan-park.jpg", "SoFi Stadium": "images/venues/sofi-stadium.jpg", "Sphere": "images/venues/sphere.jpg", "State Farm Stadium": "images/venues/state-farm-stadium.jpg", "State Street, Bristol, Virginia": "images/venues/state-street-bristol-virginia.jpg", "Stone Mountain Park": "images/venues/stone-mountain-park.jpg", "SunTrust Park": "images/venues/suntrust-park.jpg", "Talking Stick Resort Amphitheatre": "images/venues/talking-stick-resort-amphitheatre.jpg", "The Arena at Gwinnett Center": "images/venues/the-arena-at-gwinnett-center.png", "The EARL": "images/venues/the-earl.jpg", "The Goat Farm": "images/venues/the-goat-farm.jpg", "The Tabernacle": "images/venues/the-tabernacle.jpg", "The Van Buren": "images/venues/the-van-buren.jpg", "Turner Field": "images/venues/turner-field.jpg", "Underground Atlanta": "images/venues/underground-atlanta.jpg", "Variety Playhouse": "images/venues/variety-playhouse.jpg", "Verizon Wireless Amphitheatre at Encore Park": "images/venues/verizon-wireless-amphitheatre-at-encore-park.jpg", "Virginia-Highland Summerfest": "images/venues/virginia-highland-summerfest.jpg", "The Earl": "images/venues/the-earl.jpg", "The Loft": "images/venues/the-loft.jpg", "Tempe Improv": "images/venues/tempe-improv.png", "Terminal West": "images/venues/terminal-west.jpg", "Gila River Resorts & Casinos - Wild Horse Pass": "images/venues/gila-river-resorts-casinos-wild-horse-pass.jpg"};
+const list = document.getElementById("list");
+const yearSel = document.getElementById("year");
+const statusSel = document.getElementById("status");
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function seatParts(raw) {
+  const s = (raw || "").trim();
+  if (!s) return null;
+  const sec = s.match(/(?:sec(?:tion)?|orch(?:estra)?)\s*([A-Z0-9-]+)/i);
+  const row = s.match(/row\s*([A-Z0-9-]+)/i);
+  const seat = s.match(/seats?\s*([A-Z0-9][A-Z0-9,\- ]*)/i);
+  if (!sec && !row && !seat) return { raw: s };
+  return { sec: sec ? sec[1] : "—", row: row ? row[1] : "—", seat: seat ? seat[1].trim() : "—" };
+}
+function stubDate(iso) {
+  const d = new Date(iso + "T12:00:00");
+  return {
+    mon: d.toLocaleString("en-US", { month: "short" }).toUpperCase(),
+    day: String(d.getDate()).padStart(2, "0"),
+    year: String(d.getFullYear())
+  };
+}
+function faceHtml(show) {
+  const src = showArt(show);
+  if (!src) return "";
+  return `<img class="face" src="${esc(src)}" alt="" onload="this.classList.toggle('portrait', this.naturalHeight>this.naturalWidth)">`;
+}
+function ticketHtml(s) {
+  const when = stubDate(s.event_date);
+  const parts = seatParts(s.seat_or_ticket_type);
+  const seat = !parts ? `<div class="seat"><span><b>SEC</b>—</span><span><b>ROW</b>—</span><span><b>SEAT</b>—</span></div>`
+    : parts.raw ? `<div class="seat raw"><b>SEAT</b> ${esc(parts.raw)}</div>`
+    : `<div class="seat"><span><b>SEC</b>${esc(parts.sec)}</span><span><b>ROW</b>${esc(parts.row)}</span><span><b>SEAT</b>${esc(parts.seat)}</span></div>`;
+  const extra = s.status && s.status !== "past" ? `<p class="status-line">${esc(s.status)}</p>` : "";
+  const notes = s.notes ? `<details><summary>Notes</summary><p>${esc(s.notes)}</p></details>` : "";
+  return `<article class="ticket">
+    <div class="stub ${esc(s.category)}"><div class="mon">${when.mon}</div><div class="day">${when.day}</div><div class="year">${when.year}</div></div>
+    <div class="perf" aria-hidden="true"></div>
+    <div class="body">
+      <div class="copy">
+        <div class="admit">ADMIT ONE</div>
+        <h2>${esc(s.artist)}</h2>
+        <p class="venue">${esc(s.venue || "Venue not recorded")}</p>
+        ${extra}
+        ${seat}
+        ${notes}
+      </div>
+      ${faceHtml(s)}
+    </div>
+  </article>`;
+}
+function filtered() {
+  return SHOWS.filter(matches).sort((a, b) => state.newest ? b.event_date.localeCompare(a.event_date) : a.event_date.localeCompare(b.event_date));
+}
+function render() {
+  const rows = filtered();
+  document.getElementById("count").textContent = `${rows.length} of ${SHOWS.length}`;
+  const back = state.venue ? `<button class="back" type="button" id="venue-back">All venues</button>` : "";
+  list.innerHTML = rows.length ? back + rows.map(ticketHtml).join("") : back + `<p class="empty">Nothing matches.</p>`;
+  const backBtn = document.getElementById("venue-back");
+  if (backBtn) backBtn.addEventListener("click", () => { state.venue = ""; applyPane("venues"); renderVenues(); });
+}
+function renderRoster() {
+  const q = norm(document.getElementById("artist-q").value);
+  const rows = ROSTER.filter(r => !q || norm(r.name).includes(q));
+  document.getElementById("artist-count").textContent = q ? `${rows.length} of ${ROSTER.length}` : `${ROSTER.length} artists and teams`;
+  const box = document.getElementById("roster");
+  if (!rows.length) {
+    box.innerHTML = `<p class="empty">No artist or team matches.</p>`;
+    return;
+  }
+  box.innerHTML = rows.map(r => {
+    const src = ART[r.name] || "";
+    const img = src ? `<img src="${esc(src)}" alt="">` : "";
+    const long = r.name.length > 18 ? " long" : "";
+    const nights = r.count === 1 ? "night" : "nights";
+    return `<a class="poster ${esc(r.category)}${src ? "" : " typeonly"}" href="?q=${encodeURIComponent(r.name)}&act=${encodeURIComponent(r.name)}">${img}<div class="stack"><h2 class="name${long}">${esc(r.name)}</h2><p class="stars">★ ★ ★</p><p class="support">on the list</p><p class="when"><b>${r.count}</b><span>${nights}</span></p></div></a>`;
+  }).join("");
+}
+function renderVenues() {
+  const counts = new Map();
+  SHOWS.forEach(s => {
+    const name = s.venue || "Venue not recorded";
+    counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  const q = norm(document.getElementById("venue-q").value);
+  const names = [...counts.keys()].filter(name => !q || norm(name).includes(q)).sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+  document.getElementById("venue-count").textContent = q ? `${names.length} of ${counts.size}` : `${counts.size} venues`;
+  const box = document.getElementById("venue-wall");
+  if (!names.length) {
+    box.innerHTML = `<p class="empty">No venue matches.</p>`;
+    return;
+  }
+  box.innerHTML = names.map(name => {
+    const src = VENUE[name] || "";
+    const img = src ? `<img src="${esc(src)}" alt="">` : "";
+    const long = name.length > 32 ? " longer" : name.length > 16 ? " long" : "";
+    const n = counts.get(name);
+    const nights = n === 1 ? "night" : "nights";
+    return `<button class="poster${src ? "" : " typeonly"}" type="button" data-venue="${esc(name)}">${img}<div class="stack"><h2 class="name${long}">${esc(name)}</h2><p class="stars">★ ★ ★</p><p class="support">on the list</p><p class="when"><b>${n}</b><span>${nights}</span></p></div></button>`;
+  }).join("");
+}
+function setPressed(group, value) {
+  document.querySelectorAll(`#types button`).forEach(el => el.setAttribute("aria-pressed", el.dataset.value === value ? "true" : "false"));
+}
+function clearEventFilters() {
+  state.category = "all";
+  state.status = "all";
+  state.year = "all";
+  state.venue = "";
+  state.missing = false;
+  state.newest = true;
+  yearSel.value = "all";
+  statusSel.value = "all";
+  document.getElementById("missing").setAttribute("aria-pressed", "false");
+  document.getElementById("sort").textContent = "Newest";
+  setPressed("types", "all");
+}
+function pageUrl(view, act) {
+  const params = new URLSearchParams(location.search);
+  params.delete("view");
+  params.delete("q");
+  params.delete("act");
+  if (view && view !== "shows") params.set("view", view);
+  if (act) { params.set("q", act); params.set("act", act); }
+  const qs = params.toString();
+  return qs ? "?" + qs : location.pathname;
+}
+function applyPane(view) {
+  document.getElementById("list").hidden = view !== "shows";
+  document.getElementById("artists").hidden = view !== "artists";
+  document.getElementById("venues").hidden = view !== "venues";
+  document.getElementById("filters").hidden = view === "artists" || view === "venues";
+  document.body.classList.toggle("artists-on", view === "artists" || view === "venues");
+  ["shows", "artists", "venues"].forEach(id => {
+    const el = document.getElementById("tab-" + id);
+    if (id === view) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  });
+}
+function openAct(name) {
+  clearEventFilters();
+  state.act = name;
+  state.q = name;
+  document.getElementById("q").value = name;
+  history.pushState(null, "", pageUrl("shows", name));
+  applyPane("shows");
+  render();
+  window.scrollTo(0, 0);
+}
+function openArtists() {
+  history.pushState(null, "", pageUrl("artists", ""));
+  applyPane("artists");
+  renderRoster();
+  window.scrollTo(0, 0);
+}
+function openVenues() {
+  state.venue = "";
+  history.pushState(null, "", pageUrl("venues", ""));
+  applyPane("venues");
+  renderVenues();
+  window.scrollTo(0, 0);
+}
+function openShows() {
+  state.act = "";
+  state.q = "";
+  state.venue = "";
+  document.getElementById("q").value = "";
+  history.pushState(null, "", pageUrl("shows", ""));
+  applyPane("shows");
+  render();
+}
+function readUrl() {
+  const params = new URLSearchParams(location.search);
+  const view = params.get("view") || "shows";
+  if (view === "artists") { applyPane("artists"); renderRoster(); return; }
+  if (view === "venues") { applyPane("venues"); renderVenues(); return; }
+  const act = params.get("act") || "";
+  const q = params.get("q") || "";
+  state.act = act && ROSTER.some(r => r.name === act) ? act : "";
+  state.q = state.act || q;
+  document.getElementById("q").value = state.q;
+  applyPane("shows");
+  render();
+}
+
+["all", "concert", "comedy", "sports", "other"].forEach(value => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.dataset.value = value;
+  b.textContent = value === "all" ? "All" : value[0].toUpperCase() + value.slice(1);
+  b.setAttribute("aria-pressed", value === "all" ? "true" : "false");
+  b.addEventListener("click", () => {
+    state.category = value;
+    setPressed("types", value);
+    render();
+  });
+  document.getElementById("types").append(b);
+});
+const years = [...new Set(SHOWS.map(s => s.event_date.slice(0, 4)))].sort((a, b) => b - a);
+yearSel.innerHTML = `<option value="all">All dates</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
+yearSel.addEventListener("change", () => { state.year = yearSel.value; render(); });
+statusSel.innerHTML = ["all", "upcoming", "past", "transferred", "cancelled"].map(s => `<option value="${s}">${s === "all" ? "Any status" : s[0].toUpperCase() + s.slice(1)}</option>`).join("");
+statusSel.addEventListener("change", () => { state.status = statusSel.value; render(); });
+document.getElementById("q").addEventListener("input", e => {
+  state.q = e.target.value.trim();
+  if (state.act && state.q !== state.act) state.act = "";
+  render();
+});
+document.getElementById("sort").addEventListener("click", e => {
+  state.newest = !state.newest;
+  e.target.textContent = state.newest ? "Newest" : "Oldest";
+  render();
+});
+document.getElementById("missing").addEventListener("click", e => {
+  state.missing = !state.missing;
+  e.target.setAttribute("aria-pressed", state.missing ? "true" : "false");
+  render();
+});
+document.getElementById("tab-shows").addEventListener("click", openShows);
+document.getElementById("tab-artists").addEventListener("click", openArtists);
+document.getElementById("tab-venues").addEventListener("click", openVenues);
+document.getElementById("artist-q").addEventListener("input", renderRoster);
+document.getElementById("venue-q").addEventListener("input", renderVenues);
+document.getElementById("roster").addEventListener("click", e => {
+  const a = e.target.closest("a.poster");
+  if (!a) return;
+  e.preventDefault();
+  openAct(a.querySelector(".name").textContent);
+});
+document.getElementById("venues").addEventListener("click", e => {
+  const btn = e.target.closest("button.poster");
+  if (!btn) return;
+  state.venue = btn.dataset.venue;
+  applyPane("shows");
+  render();
+  window.scrollTo(0, 0);
+});
+window.addEventListener("popstate", readUrl);
+readUrl();
+</script>
+</body>
+</html>
